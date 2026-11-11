@@ -263,6 +263,28 @@ template <chip CHIP>
 static inline void
 fd6_fence_write(fd_cs &cs, uint32_t val, struct fd_bo *bo, uint32_t offset)
 {
+   /* On a7xx+ FD_CACHE_CLEAN has needs_seqno = false, so __event_write()
+    * emits the event without the address and value and the fence never
+    * reaches memory.  Autotune then never retires a result and leaks one
+    * fd_batch_result per batch.  Write it the way turnip does.
+    */
+   if (CHIP >= A7XX) {
+      fd_pkt7 pkt(cs, CP_EVENT_WRITE, 4);
+
+      pkt.add(CP_EVENT_WRITE7_0(
+         .event = CACHE_FLUSH_TS,
+         .write_src = EV_WRITE_USER_32B,
+         .write_dst = EV_DST_RAM,
+         .write_enabled = true,
+      ));
+      pkt.add(CP_EVENT_WRITE_ADDR(
+         .bo = bo,
+         .bo_offset = offset,
+      ));
+      pkt.add(val);
+      return;
+   }
+
    __event_write<CHIP>(cs, FD_CACHE_CLEAN, EV_WRITE_USER_32B, EV_DST_RAM, val, bo, offset);
 }
 
