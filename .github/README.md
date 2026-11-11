@@ -97,7 +97,7 @@ Procedure B, with git:
 Each cycle makes one batch with a clear and a draw, and one batch with a draw only.
 The program measures the increase of its memory (RSS) for 300,000 batches. It also reads one pixel back.
 
-    gcc -O1 -o leak-test konig/leak-test.c -lEGL -lGLESv2
+    gcc -O2 -o leak-test konig/leak-test.c -lEGL -lGLESv2
     ./leak-test 150000
 
 Results on our system:
